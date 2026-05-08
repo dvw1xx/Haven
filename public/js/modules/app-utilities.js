@@ -159,7 +159,13 @@ _wireBurnMessages(root) {
     const btn = content.querySelector('.burn-reveal-btn');
     btn.addEventListener('click', () => {
       content.innerHTML = el.dataset.burnRealContent || '';
-      this.socket.emit('mark-burning', { code: this.currentChannel, messageId });
+      // In a PiP DM the main pane is on a different channel, so currentChannel
+      // is wrong. Resolve the channel code from the element's container.
+      const pipList = document.getElementById('dm-pip-messages');
+      const burnCode = (pipList && pipList.contains(el))
+        ? (this._activeDMPip || this.currentChannel)
+        : this.currentChannel;
+      this.socket.emit('mark-burning', { code: burnCode, messageId });
       this._startBurnCountdown(el, burnSeconds, new Date().toISOString());
     }, { once: true });
   });
@@ -2477,6 +2483,7 @@ _appendDMPiPMessage(msg) {
   try { this._setupVideos?.(el); } catch {}
   try { this._decryptE2EImages?.(el); } catch {}
   try { this._decryptE2EFiles?.(el); } catch {}
+  try { this._wireBurnMessages?.(el); } catch {}
   if (wasAtBottom) list.scrollTop = list.scrollHeight;
 },
 
