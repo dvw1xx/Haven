@@ -11,6 +11,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Haven uses [Sema
 
 ---
 
+## [3.15.8] — 2026-05-12
+
+The one nobody saw coming. The reason all the v3.15.3-3.15.7 voice fixes appeared not to work for users is that **none of the client-side changes since v3.14.14 were actually being delivered to browsers.** The `<script>` cache-bust strings in app.html were pinned at `?v=3.15.2` and the ES-module imports inside app.js (which load app-voice.js, app-socket.js, app-users.js, etc.) were pinned at `?v=3.14.14`. Browsers happily kept serving the cached pre-3.15.4 client JS even on a fully-updated 3.15.7 server. So everything fixed since v3.14.14 was running on the server but missing from the client. The screen-share renegotiation work (3.15.5), the sidebar/voice-panel sync (3.15.4), the `_softLeave` rejoin path (3.15.4), the persona autocomplete fixes (3.15.6) — none of it ever ran in any browser. Apologies for the runaround on this one. (#5347)
+
+### Fixed
+- Bumped every `?v=` cache-bust string in `public/app.html` (3.15.2 → 3.15.8) and `public/js/app.js` (3.14.14 → 3.15.8). Forces every browser to fetch the post-3.14.14 client JS that the previous releases shipped to the server but never to the user.
+
+---
+
 ## [3.15.7] — 2026-05-09
 
 Hotfix on top of 3.15.4-3.15.6 (#5347). The voice presence work in 3.15.4 added a `getUserAllRoles` lookup inside `broadcastVoiceUsers` but the helper was never destructured from `createPermissions(db)`, so every voice broadcast (join, leave, mute, etc.) was throwing `ReferenceError: getUserAllRoles is not defined`. The error happened inside an async socket handler, so the server stayed up but the broadcast never completed: clients kept showing whoever was last successfully broadcast, ghost users persisted after leaves, and rejoiners didn't appear in the roster until everyone left and rejoined. This is the actual cause of the long-standing "voice list disagrees with reality" symptom, not the things 3.15.3-3.15.5 patched around it.
