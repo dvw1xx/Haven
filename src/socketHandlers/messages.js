@@ -376,12 +376,13 @@ module.exports = function register(socket, ctx) {
     const files  = [];
     const links  = [];
 
-    const IMG_EXT = /\.(jpe?g|png|gif|webp|bmp|svg|avif)(?:$|[?#])/i;
-    const VID_EXT = /\.(mp4|webm|mov|m4v|mkv|ogv)(?:$|[?#])/i;
-    const AUD_EXT = /\.(mp3|wav|ogg|m4a|flac|aac|opus|weba)(?:$|[?#])/i;
+    const IMG_EXT = /\.(jpe?g|png|gif|webp|bmp|svg|avif)(?:$|[?#|])/i;
+    const VID_EXT = /\.(mp4|webm|mov|m4v|mkv|ogv)(?:$|[?#|])/i;
+    const AUD_EXT = /\.(mp3|wav|ogg|m4a|flac|aac|opus|weba)(?:$|[?#|])/i;
 
-    // [file:Original Name](/uploads/...) markdown wrapper
-    const fileLinkRe = /\[file:([^\]]+)\]\((\/uploads\/[^)\s]+)\)/g;
+    // [file:Original Name](/uploads/...|size) markdown wrapper
+    // File attachments use [file:name](url|size) format; capture url stopping at | ) or whitespace
+    const fileLinkRe = /\[file:([^\]]+)\]\((\/uploads\/[^)|\s]+)(?:\|[^)]*)?\)/g;
     // bare /uploads/ URL (image markdown ![alt](/uploads/x) or plain path)
     const uploadRe   = /(?:!\[[^\]]*\]\(([^)\s]+)\)|(\/uploads\/[^\s)]+))/g;
     // http(s):// URLs (anywhere in content)
@@ -417,8 +418,10 @@ module.exports = function register(socket, ctx) {
 
       // 2) bare /uploads/ URLs / image markdown
       while ((m = uploadRe.exec(content)) !== null) {
-        const url = m[1] || m[2];
-        if (!url || !url.startsWith('/uploads/')) continue;
+        const rawUrl = m[1] || m[2];
+        if (!rawUrl || !rawUrl.startsWith('/uploads/')) continue;
+        // Strip trailing |size suffix that file attachments embed in the URL slot
+        const url = rawUrl.replace(/\|[^)]*$/, '');
         if (seen.has(url)) continue;
         seen.add(url);
         const entry = baseEntry(url);

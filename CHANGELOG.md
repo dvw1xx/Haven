@@ -11,6 +11,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Haven uses [Sema
 
 ---
 
+## [3.16.4] — 2026-05-14
+
+### Fixed
+- **Unicode letters blocked in channel names (#5362).** The channel-name validation regex used `\w` which is ASCII-only even with the `u` flag in JavaScript. Umlauts (ä, ö, ü), accented letters, and other non-ASCII characters were rejected with "invalid characters." Added `\p{L}\p{M}` (Unicode letter and combining-mark categories) to the regex, so any language's script is now accepted.
+
+---
+
+## [3.16.3] — 2026-05-14
+
+### Fixed
+- **Video/audio files not categorized in media gallery (#5361).** File attachments are stored in message content as `[file:name](url|size)`. The `|size` suffix was part of the URL field, causing the extension regex to fail (e.g. `.mp4|2.5` didn't match `\.mp4(?:$|[?#])`). As a result, all video and audio files fell into the "files" tab instead of "videos" or "audios." Fixed by updating the file-link regex to stop at `|`, and stripping the `|size` suffix from bare upload URLs before extension testing.
+
+---
+
 ## [3.16.2] — 2026-05-13
 
 ### Fixed
